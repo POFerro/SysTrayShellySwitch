@@ -1,0 +1,49 @@
+﻿<Window x:Class="SysTrayShellySwitch.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
+        xmlns:local="clr-namespace:SysTrayShellySwitch"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="240" Width="240"
+        Visibility="Hidden" ShowInTaskbar="False"
+        Icon="/power-off-solid.ico">
+    
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary x:Name="IconsDictionary" 
+                                    Source="pack://application:,,,/SysTrayShellySwitch;component/Images.xaml" />
+
+                <ResourceDictionary x:Name="PowerButtonStyle" 
+                                    Source="pack://application:,,,/SysTrayShellySwitch;component/PowerButtonStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Grid x:Key="TrayStatusPopup" Width="240" Height="240">
+                <ToggleButton IsChecked="{Binding SwitchState}" Foreground="Blue" Style="{StaticResource PowerButtonStyle}">
+                </ToggleButton>
+            </Grid>
+
+            <ContextMenu x:Shared="false" x:Key="SysTrayMenu">
+                <MenuItem Header="Setting" Click="SettingMenuItem_Click" />
+                <Separator />
+                <MenuItem Header="Exit" Click="ExitMenuItem_Click" />
+            </ContextMenu>
+            
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <tb:TaskbarIcon x:Name="myNotifyIcon"
+                    Visibility="Visible"
+                    ToolTipText="{Binding SwitchStateToolTip}"
+                    IconSource="/power-off-solid.ico"
+                    TrayPopup="{StaticResource TrayStatusPopup}"
+                    PopupActivation="LeftClick"
+                    TrayPopupOpen="NotifyIcon_PopupOpened"
+                    MenuActivation="RightClick"
+                    ContextMenu="{StaticResource SysTrayMenu}"
+      />
+
+
+</Window>

@@ -1,0 +1,63 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SysTrayShellySwitch">
+
+    <Style TargetType="ToggleButton" x:Key="PowerButtonStyle">
+        <Style.Resources>
+            <ResourceDictionary>
+                <ResourceDictionary.MergedDictionaries>
+                    <ResourceDictionary x:Name="IconsDictionary" 
+                                    Source="pack://application:,,,/SysTrayShellySwitch;component/Images.xaml" />
+                </ResourceDictionary.MergedDictionaries>
+            </ResourceDictionary>
+        </Style.Resources>
+
+        <Setter Property="Foreground" Value="#EDB300"></Setter>
+        
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Gray" CornerRadius="20" x:Name="buttonBorder">
+                        <Viewbox>
+                            <Canvas Width="24" Height="24">
+                                <Path Fill="{TemplateBinding Foreground}" x:Name="buttonIcon"
+                                      Data="{StaticResource PowerIcon}">
+                                    <Path.Effect>
+                                        <DropShadowEffect BlurRadius="1" Direction="1" ShadowDepth="0"></DropShadowEffect>
+                                    </Path.Effect>
+                                </Path>
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="buttonIcon" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="White" BlurRadius="1" Direction="1" ShadowDepth="0"></DropShadowEffect>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="buttonIcon" Storyboard.TargetProperty="Effect.BlurRadius" From="1" To="2" Duration="0:0:0"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="buttonIcon" Storyboard.TargetProperty="Effect.BlurRadius" From="2" To="1" Duration="0:0:0"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+</ResourceDictionary>
