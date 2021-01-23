@@ -9,6 +9,13 @@
                     <ResourceDictionary x:Name="IconsDictionary" 
                                     Source="pack://application:,,,/SysTrayShellySwitch;component/Images.xaml" />
                 </ResourceDictionary.MergedDictionaries>
+
+                <DropShadowEffect x:Key="ButtonShadow" BlurRadius="2" Direction="1" ShadowDepth="0" RenderingBias="Quality" Opacity="1"></DropShadowEffect>
+                <DropShadowEffect x:Key="MouseDownButtonShadow" BlurRadius="1" Direction="1" ShadowDepth="0" RenderingBias="Quality" Opacity="1"></DropShadowEffect>
+
+                <DropShadowEffect x:Key="CheckedButtonShadow" Color="White" BlurRadius="2" Direction="1" ShadowDepth="0" RenderingBias="Quality" Opacity="1"></DropShadowEffect>
+                <DropShadowEffect x:Key="CheckedMouseDownButtonShadow" Color="White" BlurRadius="1" Direction="1" ShadowDepth="0" RenderingBias="Quality" Opacity="1"></DropShadowEffect>
+
             </ResourceDictionary>
         </Style.Resources>
 
@@ -21,39 +28,39 @@
                         <Viewbox>
                             <Canvas Width="24" Height="24">
                                 <Path Fill="{TemplateBinding Foreground}" x:Name="buttonIcon"
-                                      Data="{StaticResource PowerIcon}">
-                                    <Path.Effect>
-                                        <DropShadowEffect BlurRadius="1" Direction="1" ShadowDepth="0"></DropShadowEffect>
-                                    </Path.Effect>
+                                      Data="{StaticResource PowerIcon}" Effect="{StaticResource ButtonShadow}">
                                 </Path>
                             </Canvas>
                         </Viewbox>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="buttonIcon" Property="Effect">
-                                <Setter.Value>
-                                    <DropShadowEffect Color="White" BlurRadius="1" Direction="1" ShadowDepth="0"></DropShadowEffect>
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="buttonIcon" Storyboard.TargetProperty="Effect.BlurRadius" From="1" To="2" Duration="0:0:0"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="buttonIcon" Storyboard.TargetProperty="Effect.BlurRadius" From="2" To="1" Duration="0:0:0"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"></Condition>
+                                <Condition Property="IsPressed" Value="False"></Condition>
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.Setters>
+                                <Setter TargetName="buttonIcon" Property="Effect" Value="{StaticResource CheckedButtonShadow}"></Setter>
+                            </MultiTrigger.Setters>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="False"></Condition>
+                                <Condition Property="IsPressed" Value="True"></Condition>
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.Setters>
+                                <Setter TargetName="buttonIcon" Property="Effect" Value="{StaticResource MouseDownButtonShadow}"></Setter>
+                            </MultiTrigger.Setters>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"></Condition>
+                                <Condition Property="IsPressed" Value="True"></Condition>
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.Setters>
+                                <Setter TargetName="buttonIcon" Property="Effect" Value="{StaticResource CheckedMouseDownButtonShadow}"></Setter>
+                            </MultiTrigger.Setters>
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

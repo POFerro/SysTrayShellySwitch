@@ -52,12 +52,16 @@ namespace SysTrayShellySwitch
             get { return switchState; }
             set
             {
+                //SetProperty(ref switchState, value);
+                //OnPropertyChanged(nameof(SwitchStateToolTip));
+
+                //SetShellyState(value);
                 SetShellyState(value)
                     .ContinueWith((t, state) =>
-                        {
-                            SetProperty(ref switchState, (bool)state);
-                            OnPropertyChanged(nameof(SwitchStateToolTip));
-                        },
+                    {
+                        SetProperty(ref switchState, (bool)state);
+                        OnPropertyChanged(nameof(SwitchStateToolTip));
+                    },
                         value, TaskScheduler.Current
                     );
             }
