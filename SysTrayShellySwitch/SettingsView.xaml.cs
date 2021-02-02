@@ -21,11 +21,13 @@ namespace SysTrayShellySwitch
     {
         public SettingsViewModel ViewModel => (SettingsViewModel)this.DataContext;
 
-        public SettingsView(ShellySwitchViewModel mainViewModel)
+        public SettingsView()
         {
             InitializeComponent();
 
-            this.DataContext = new SettingsViewModel(mainViewModel);
+            this.DataContext = App.Current.Settings;
+
+            var t = this.ViewModel.LoadShellies();
         }
 
         private void OK_Click(object sender, RoutedEventArgs e)

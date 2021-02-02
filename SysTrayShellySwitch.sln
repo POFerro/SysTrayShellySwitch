@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysTrayShellySwitch", "SysTrayShellySwitch\SysTrayShellySwitch.csproj", "{5D87201E-8E78-44BF-B112-40CD1AED60A6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "POF.Common", "POF.Common\POF.Common.csproj", "{A5CBF9BE-82EF-49BF-AB8B-B1DCB09FD259}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "POF.Shelly", "POF.Shelly\POF.Shelly.csproj", "{8ADD229B-DB12-472F-90FE-D1CE60725406}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{5D87201E-8E78-44BF-B112-40CD1AED60A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D87201E-8E78-44BF-B112-40CD1AED60A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D87201E-8E78-44BF-B112-40CD1AED60A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5CBF9BE-82EF-49BF-AB8B-B1DCB09FD259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5CBF9BE-82EF-49BF-AB8B-B1DCB09FD259}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5CBF9BE-82EF-49BF-AB8B-B1DCB09FD259}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5CBF9BE-82EF-49BF-AB8B-B1DCB09FD259}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ADD229B-DB12-472F-90FE-D1CE60725406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ADD229B-DB12-472F-90FE-D1CE60725406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ADD229B-DB12-472F-90FE-D1CE60725406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ADD229B-DB12-472F-90FE-D1CE60725406}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

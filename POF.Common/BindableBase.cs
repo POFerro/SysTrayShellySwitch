@@ -1,9 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 
-namespace POF.WPF
+namespace POF.Common
 {
     /// <summary>
     /// Implementation of <see cref="INotifyPropertyChanged"/> to simplify models.
@@ -44,11 +43,7 @@ namespace POF.WPF
         /// that support <see cref="CallerMemberNameAttribute"/>.</param>
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var eventHandler = this.PropertyChanged;
-            if (eventHandler != null)
-            {
-                eventHandler(this, new PropertyChangedEventArgs(propertyName));
-            }
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

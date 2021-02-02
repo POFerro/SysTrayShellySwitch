@@ -28,7 +28,7 @@ namespace SysTrayShellySwitch
         {
             InitializeComponent();
 
-            this.DataContext = new ShellySwitchViewModel();
+            this.DataContext = new ShellySwitchViewModel(App.Current.Settings);
         }
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
@@ -38,7 +38,7 @@ namespace SysTrayShellySwitch
 
         private void SettingMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var window = new SettingsView(this.ViewModel);
+            var window = new SettingsView();
             window.ShowDialog();
         }
 

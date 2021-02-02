@@ -21,12 +21,12 @@
             </ResourceDictionary.MergedDictionaries>
 
             <Grid x:Key="TrayStatusPopup" Width="240" Height="240">
-                <ToggleButton IsChecked="{Binding SwitchState}" Foreground="Blue" Style="{StaticResource PowerButtonStyle}">
+                <ToggleButton IsChecked="{Binding ShellySwitch.SwitchState}" Foreground="Blue" Style="{StaticResource PowerButtonStyle}">
                 </ToggleButton>
             </Grid>
 
             <ContextMenu x:Shared="false" x:Key="SysTrayMenu">
-                <MenuItem Header="Setting" Click="SettingMenuItem_Click" />
+                <MenuItem Header="Settings" Click="SettingMenuItem_Click" />
                 <Separator />
                 <MenuItem Header="Exit" Click="ExitMenuItem_Click" />
             </ContextMenu>
@@ -36,7 +36,7 @@
 
     <tb:TaskbarIcon x:Name="myNotifyIcon"
                     Visibility="Visible"
-                    ToolTipText="{Binding SwitchStateToolTip}"
+                    ToolTipText="{Binding ShellySwitch.StateStr}"
                     IconSource="/power-off-solid.ico"
                     TrayPopup="{StaticResource TrayStatusPopup}"
                     PopupActivation="LeftClick"
