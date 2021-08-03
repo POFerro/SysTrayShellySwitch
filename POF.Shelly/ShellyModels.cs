@@ -477,12 +477,13 @@ namespace POF.Shelly
 
         public async Task RefreshInfo()
         {
-            var response = await http.GetAsync(new Uri($"http://{this.IPAddress}/rpc/Shelly.GetInfo"));
+            var response = await http.GetAsync(new Uri($"http://{this.IPAddress}/rpc/Shelly.GetInfoExt"));
             if (response.IsSuccessStatusCode)
             {
                 this.ReadInfoError = null;
 
-                var newInfo = JsonSerializer.Deserialize<ShellyInfo>(await response.Content.ReadAsStringAsync());
+                var deviceInfoStr = await response.Content.ReadAsStringAsync();
+                var newInfo = JsonSerializer.Deserialize<ShellyInfo>(deviceInfoStr);
 
                 CopyFrom(newInfo);
             }
