@@ -86,6 +86,7 @@ namespace POF.Shelly
 
         protected async Task RefreshShellies()
         {
+            Trace.WriteLine("Refreshing found shellies with mDNS");
             var responses = await ZeroconfResolver.ResolveAsync("_hap._tcp.local.");
             var shelies = responses
                 .Where(host => host.Services["_hap._tcp.local."].Properties

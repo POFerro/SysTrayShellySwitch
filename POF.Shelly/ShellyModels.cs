@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -10,6 +11,8 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Web;
+using System.Collections.Specialized;
 
 namespace POF.Shelly
 {
@@ -253,6 +256,15 @@ namespace POF.Shelly
         //http
     }
 
+    public enum ShellyInputEvent
+    {
+        kChange = 0,
+        kSingle = 1,
+        kDouble = 2,
+        kLong = 3,
+        kReset = 4,
+        kMax,
+    };
 
     public class ShellyProgramableInput : ShellyComponent
     {
@@ -272,6 +284,91 @@ namespace POF.Shelly
 
         [JsonPropertyName("last_ev_age")]
         public decimal? LastEventAge { get; set; }
+
+        [JsonIgnore()]
+        public bool SwitchState
+        {
+            get { return switchState; }
+            set
+            {
+                if (switchState == value)
+                    return;
+
+                SaveState(value)
+                    .ContinueWith((t, state) =>
+                    {
+                        SetProperty(ref switchState, (bool)state);
+                        OnPropertyChanged(nameof(StateStr));
+                    },
+                        value, TaskScheduler.Current
+                    );
+            }
+        }
+        private bool switchState;
+
+        public string StateStr => this.StateStringFormatter(this.SwitchState);
+
+        public Func<bool, string> StateStringFormatter
+        {
+            get { return _stateStringFormatter; }
+            set
+            {
+                SetProperty(ref _stateStringFormatter, value);
+                OnPropertyChanged(nameof(StateStr));
+            }
+        }
+        private Func<bool, string> _stateStringFormatter = (state) => state switch
+        {
+            true => "Ligado",
+            false => "Desligado"
+        };
+
+        protected virtual async Task SaveState(bool value)
+        {
+            Uri apiAddress;
+            HttpResponseMessage response;
+            var originalInMode = this.InputMode;
+
+            // Due to issue https://github.com/mongoose-os-apps/shelly-homekit/issues/461 events get ignored for 
+            // switches != Momentary, so we change temporarily the input mode do momentary in order to be able to send events freely
+            // After injecting the event we change the in_mode back to original
+            if (originalInMode != StatelessSwitchInputMode.Momentary)
+            {
+                var parms = new NameValueCollection() {
+                    { "id", this.Id.ToString() },
+                    { "type", ((short)this.HAPType).ToString() },
+                    { "config", JsonSerializer.Serialize(new { in_mode = (short)StatelessSwitchInputMode.Momentary }) },
+                };
+                apiAddress = new Uri(new Uri("http://" + this.Parent.IPAddress), $"rpc/Shelly.SetConfig" + parms.ToQueryString());
+
+                response = await http.GetAsync(apiAddress);
+                Trace.TraceInformation($"Shelly.SetConfig: Got response: {{{response.StatusCode}}} {response.ReasonPhrase} ->{await response.Content.ReadAsStringAsync()}");
+            }
+
+            var eventToSend = (short)
+                (originalInMode == StatelessSwitchInputMode.Momentary ?
+                    ShellyInputEvent.kChange :
+                    (originalInMode == StatelessSwitchInputMode.ToggleOnOffSinglePress || value) ?
+                        ShellyInputEvent.kSingle : ShellyInputEvent.kDouble);
+            apiAddress = new Uri(new Uri("http://" + this.Parent.IPAddress),
+                $"rpc/Shelly.InjectInputEvent?id={this.Id}&event={eventToSend}");
+
+            response = await http.GetAsync(apiAddress);
+            Trace.TraceInformation($"Shelly.InjectInputEvent: Got response: {{{response.StatusCode}}} {response.ReasonPhrase} ->{await response.Content.ReadAsStringAsync()}");
+
+            if (originalInMode != StatelessSwitchInputMode.Momentary)
+            {
+                var parms = new NameValueCollection() {
+                    { "id", this.Id.ToString() },
+                    { "type", ((short)this.HAPType).ToString() },
+                    { "config", JsonSerializer.Serialize(new { in_mode = (short)originalInMode }) },
+                };
+                apiAddress = new Uri(new Uri("http://" + this.Parent.IPAddress), $"rpc/Shelly.SetConfig" + parms.ToQueryString());
+
+                response = await http.GetAsync(apiAddress);
+                Trace.TraceInformation($"Shelly.SetConfig: Got response: {{{response.StatusCode}}} {response.ReasonPhrase} ->{await response.Content.ReadAsStringAsync()}");
+            }
+        }
     }
 
     #region Desinteressantes
@@ -497,7 +594,7 @@ namespace POF.Shelly
         public void CopyFrom(ShellyInfo newInfo)
         {
             foreach (var prop in this.GetType().GetProperties()
-                                               .Where(p => p.CanRead && p.CanWrite)
+                                               .Where(p => p.CanRead && p.CanWrite && !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any())
                                                .Where(p => p.Name != nameof(Components)))
             {
                 prop.SetValue(this, prop.GetValue(newInfo));
@@ -530,7 +627,7 @@ namespace POF.Shelly
                 foreach (var compo in components.Where(c => c.oldInfo != null))
                 {
                     foreach (var prop in compo.oldInfo.GetType().GetProperties()
-                                                        .Where(p => p.CanRead && p.CanWrite))
+                                                        .Where(p => p.CanRead && p.CanWrite && !p.GetCustomAttributes(typeof(JsonIgnoreAttribute), true).Any()))
                     {
                         prop.SetValue(compo.oldInfo, prop.GetValue(compo.newInfo));
                     }
