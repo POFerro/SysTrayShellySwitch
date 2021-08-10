@@ -56,7 +56,7 @@ namespace SysTrayShellySwitch
                                           {
                                               BridgeName = device.Name,
                                               SwitchName = sw.Name,
-                                              Host = device.DeviceId, // Should be host but due to temporary bug it's being broadcast as deviceId: https://github.com/mongoose-os-apps/shelly-homekit/issues/627#issuecomment-817384943
+                                              Host = device.Host,
                                               ShellyButtonId = sw.Id,
                                               ShellyDeviceType = sw.HAPType,
                                               Model = device.Model

@@ -13,9 +13,27 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Web;
 using System.Collections.Specialized;
+using System.Text.RegularExpressions;
+using System.Net.Http.Headers;
+using System.Net.Mime;
+using System.IO;
 
 namespace POF.Shelly
 {
+    public class VersionInformation
+    {
+        [JsonPropertyName("version")]
+        public string VersionStr { get => this.Version.ToString(); set => this.Version = Version.Parse(value); }
+        [JsonIgnore()]
+        public Version Version { get; set; }
+
+        [JsonPropertyName("rel_notes")]
+        public string ReleaseNotesUrl { get; set; }
+
+        [JsonPropertyName("urls")]
+        public JsonElement Urls { get; set; }
+    }
+
     public enum SysMode : short
     {
         Switch = 0,
@@ -498,7 +516,10 @@ namespace POF.Shelly
         public Uri HostUri => this.Host != null ? new Uri("http://" + this.Host) : null;
 
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string VersionStr { get => this.Version.ToString(); set => this.Version = Version.Parse(value); }
+        [JsonIgnore()]
+        public Version Version { get; set; }
+
         [JsonPropertyName("fw_build")]
         public string FWBuild { get; set; }
         [JsonPropertyName("uptime")]
@@ -567,6 +588,15 @@ namespace POF.Shelly
         }
         private HttpErrorDetails _readInfoEror;
 
+
+        public bool UpdateAvailable => this.AvailableVersion?.Version > this.Version;
+        public VersionInformation AvailableVersion
+        {
+            get { return _availableVersion; }
+            private set { SetProperty(ref _availableVersion, value); OnPropertyChanged(nameof(UpdateAvailable)); }
+        }
+        private VersionInformation _availableVersion;
+
         protected static readonly HttpClient http = new();
         public ShellyInfo()
         {
@@ -588,6 +618,75 @@ namespace POF.Shelly
             {
                 ReadInfoError = !response.IsSuccessStatusCode ? new HttpErrorDetails { StatusCode = response.StatusCode, ReasonPhrase = response.ReasonPhrase, ErrorMessage = await response.Content.ReadAsStringAsync() }
                                                               : null;
+            }
+        }
+
+        public async Task CheckForUpdates()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://rojer.me/files/shelly/update.json"));
+            request.Headers.Add("X-Current-Build", this.FWBuild);
+            request.Headers.Add("X-Current-Version", this.VersionStr);
+            request.Headers.Add("X-Device-ID", this.DeviceId);
+            request.Headers.Add("X-Model", this.Model);
+
+            var response = await http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var updateStr = await response.Content.ReadAsStringAsync();
+                var resp = JsonDocument.Parse(updateStr);
+
+
+                var versionObj = resp.RootElement
+                                     .EnumerateArray()
+                                     .OrderByDescending(v => System.Version.Parse(v[1].GetProperty("version").GetString()))
+                                     .Select(b => JsonSerializer.Deserialize<VersionInformation>(b[1].ToString()))
+                                     .First();
+
+                CheckForUpdates(versionObj);
+            }
+            else
+            {
+                Trace.WriteLine($"Error in check for updates: Status->" + response.StatusCode + ":" + response.ReasonPhrase + "->" + await response.Content.ReadAsStringAsync());
+            }
+        }
+
+        public void CheckForUpdates(VersionInformation availableVersion)
+        {
+            if (availableVersion.Version > this.Version)
+            {
+                this.AvailableVersion = availableVersion;
+            }
+        }
+
+        public async Task Update()
+        {
+            if (this.UpdateAvailable)
+            {
+                var url = this.AvailableVersion.Urls.GetProperty(this.Model).GetString();
+                using (var updateBlobResp = await http.GetAsync(url))
+                {
+                    Trace.WriteLine($"Updating shelly: {this.Host} to version: {this.AvailableVersion.Version}");
+                    if (!updateBlobResp.IsSuccessStatusCode)
+                        this.ReadInfoError = new HttpErrorDetails() { StatusCode = updateBlobResp.StatusCode, ReasonPhrase = updateBlobResp.ReasonPhrase, ErrorMessage = await updateBlobResp.Content.ReadAsStringAsync() };
+
+                    if (updateBlobResp.Content.Headers.ContentType?.MediaType != MediaTypeNames.Application.Zip)
+                        this.ReadInfoError = new HttpErrorDetails() { StatusCode = System.Net.HttpStatusCode.UnsupportedMediaType, ErrorMessage = "Got wrong content-type from update, can't update. Try manually." };
+
+                    var fileBlob = await updateBlobResp.Content.ReadAsByteArrayAsync();
+
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"http://{this.IPAddress}/update");
+                    var content = new MultipartFormDataContent();
+                    var fileContent = new ByteArrayContent(fileBlob);
+                    content.Add(fileContent, "file", "blob");
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Zip);
+                    request.Content = content;
+                    var resp = await http.SendAsync(request);
+
+                    if (!resp.IsSuccessStatusCode)
+                        this.ReadInfoError = new HttpErrorDetails() { StatusCode = updateBlobResp.StatusCode, ReasonPhrase = updateBlobResp.ReasonPhrase, ErrorMessage = await updateBlobResp.Content.ReadAsStringAsync() };
+                    else
+                        Trace.WriteLine($"Update of shelly: {this.Host} to version: {this.AvailableVersion.Version} finished successfully");
+                }
             }
         }
 
