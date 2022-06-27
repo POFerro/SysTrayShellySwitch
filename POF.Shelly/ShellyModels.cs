@@ -491,14 +491,36 @@ namespace POF.Shelly
     public class ShellyInfo : BindableBase
     {
         [JsonPropertyName("app")]
-        public string App { get; set; }
+        public string App
+        {
+            get { return _app; }
+            set { SetProperty(ref _app, value); }
+        }
+        private string _app;
         [JsonPropertyName("device_id")]
-        public string DeviceId { get; set; }
+        public string DeviceId
+        {
+            get { return _deviceId; }
+            set { SetProperty(ref _deviceId, value); }
+        }
+        private string _deviceId;
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string Name
+        {
+            get { return _name; }
+            set { SetProperty(ref _name, value); }
+        }
+        private string _name;
+
         [JsonPropertyName("model")]
-        public string Model { get; set; }
-        [JsonPropertyName("stock_model")]
+        public string Model
+        {
+            get { return _model; }
+            set { SetProperty(ref _model, value); }
+        }
+        private string _model;
+
+        [JsonPropertyName("stock_fw_model")]
         public string StockModel { get; set; }
 
         [JsonPropertyName("host")]
@@ -516,9 +538,14 @@ namespace POF.Shelly
         public Uri HostUri => this.Host != null ? new Uri("http://" + this.Host) : null;
 
         [JsonPropertyName("version")]
-        public string VersionStr { get => this.Version.ToString(); set => this.Version = Version.Parse(value); }
+        public string VersionStr { get => this.Version.ToString(); set { this.Version = Version.Parse(value); OnPropertyChanged(); } }
         [JsonIgnore()]
-        public Version Version { get; set; }
+        public Version Version
+        {
+            get { return _version; }
+            set { SetProperty(ref _version, value); }
+        }
+        private Version _version;
 
         [JsonPropertyName("fw_build")]
         public string FWBuild { get; set; }
@@ -537,9 +564,9 @@ namespace POF.Shelly
         public string WifiSSID { get; set; }
         [JsonPropertyName("wifi_pass")]
         public string WifiPass { get; set; }
-        [JsonPropertyName("wifi_rssi")]
+        [JsonPropertyName("wifi_conn_rssi")]
         public long WifiRSSI { get; set; }
-        [JsonPropertyName("wifi_ip")]
+        [JsonPropertyName("wifi_conn_ip")]
         public string IPAddress { get; set; }
         [JsonPropertyName("hap_cn")]
         public short HAPConnections { get; set; }
@@ -570,7 +597,12 @@ namespace POF.Shelly
         private short _sysTemperature;
 
         [JsonPropertyName("overheat_on")]
-        public bool OverheatOn { get; set; }
+        public bool OverheatOn
+        {
+            get { return _overheatOn; }
+            set { SetProperty(ref _overheatOn, value); }
+        }
+        private bool _overheatOn;
 
         [JsonPropertyName("components")]
         public List<ShellyComponent> Components
@@ -672,20 +704,27 @@ namespace POF.Shelly
                     if (updateBlobResp.Content.Headers.ContentType?.MediaType != MediaTypeNames.Application.Zip)
                         this.ReadInfoError = new HttpErrorDetails() { StatusCode = System.Net.HttpStatusCode.UnsupportedMediaType, ErrorMessage = "Got wrong content-type from update, can't update. Try manually." };
 
-                    var fileBlob = await updateBlobResp.Content.ReadAsByteArrayAsync();
+                    if (this.ReadInfoError != null)
+                    {
+                        Trace.WriteLine($"Got error updating shelly: {this.Host} error is: {this.ReadInfoError.StatusCode}->{this.ReadInfoError.ReasonPhrase}->{this.ReadInfoError.ErrorMessage}");
+                        return;
+                    }
 
-                    var request = new HttpRequestMessage(HttpMethod.Post, $"http://{this.IPAddress}/update");
-                    var content = new MultipartFormDataContent();
-                    var fileContent = new ByteArrayContent(fileBlob);
-                    content.Add(fileContent, "file", "blob");
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Zip);
-                    request.Content = content;
-                    var resp = await http.SendAsync(request);
+                    using (var fileBlob = await updateBlobResp.Content.ReadAsStreamAsync())
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Post, $"http://{this.IPAddress}/update");
+                        var content = new MultipartFormDataContent();
+                        var fileContent = new StreamContent(fileBlob);
+                        content.Add(fileContent, "file", "blob");
+                        fileContent.Headers.ContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Zip);
+                        request.Content = content;
+                        var resp = await http.SendAsync(request);
 
-                    if (!resp.IsSuccessStatusCode)
-                        this.ReadInfoError = new HttpErrorDetails() { StatusCode = updateBlobResp.StatusCode, ReasonPhrase = updateBlobResp.ReasonPhrase, ErrorMessage = await updateBlobResp.Content.ReadAsStringAsync() };
-                    else
-                        Trace.WriteLine($"Update of shelly: {this.Host} to version: {this.AvailableVersion.Version} finished successfully");
+                        if (!resp.IsSuccessStatusCode)
+                            this.ReadInfoError = new HttpErrorDetails() { StatusCode = updateBlobResp.StatusCode, ReasonPhrase = updateBlobResp.ReasonPhrase, ErrorMessage = await updateBlobResp.Content.ReadAsStringAsync() };
+                        else
+                            Trace.WriteLine($"Update of shelly: {this.Host} to version: {this.AvailableVersion.Version} finished successfully");
+                    }
                 }
             }
         }

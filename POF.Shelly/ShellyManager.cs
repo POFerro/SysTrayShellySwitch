@@ -104,10 +104,6 @@ namespace POF.Shelly
         public async Task CheckForUpdates()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"https://rojer.me/files/shelly/update.json"));
-            //request.Headers.Add("X-Current-Build", this.FWBuild);
-            //request.Headers.Add("X-Current-Version", this.Version);
-            //request.Headers.Add("X-Device-ID", this.DeviceId);
-            //request.Headers.Add("X-Model", this.Model);
 
             var response = await http.SendAsync(request);
             if (response.IsSuccessStatusCode)
@@ -170,10 +166,10 @@ namespace POF.Shelly
             Trace.WriteLine($"Found {responses.Count} devices for _hap.tcp.local.");
 
             var shelies = responses
-                .Where(host => host.Services["_hap._tcp.local."].Properties
+                .Where(host => host.Services.FirstOrDefault(s => s.Value.Name == "_hap._tcp.local.").Value?.Properties
                                    .Any(pSet => pSet.TryGetValue("md", out string mdValue) &&
                                                 mdValue.StartsWith("shelly", StringComparison.OrdinalIgnoreCase)
-                                       )
+                                       ) == true
                        )
                 .ToList();
             Trace.WriteLine($"Found {shelies.Count} shelly devices");
