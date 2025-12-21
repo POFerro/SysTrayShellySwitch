@@ -21,6 +21,7 @@ namespace SysTrayShellySwitch
         public string SwitchName { get; set; }
 
         public string Host { get; set; }
+        public string IPAddress { get; set; }
         public short ShellyButtonId { get; set; }
         public HAPType ShellyDeviceType { get; set; }
         public string Model { get; set; }
@@ -28,7 +29,7 @@ namespace SysTrayShellySwitch
 
     public class ConfigSettings
     {
-        public string ShellyAddress { get; set; }
+        public string ShellyName { get; set; }
         public int ShellyButtonId { get; set; }
         public HAPType ShellyDeviceType { get; set; }
     }
@@ -57,6 +58,7 @@ namespace SysTrayShellySwitch
                                               BridgeName = device.Name,
                                               SwitchName = sw.Name,
                                               Host = device.Host,
+                                              IPAddress = device.IPAddress,
                                               ShellyButtonId = sw.Id,
                                               ShellyDeviceType = sw.HAPType,
                                               Model = device.Model
@@ -65,7 +67,7 @@ namespace SysTrayShellySwitch
                               .ToList();
 
             this.SelectedSwitch = this.AvailableSwitches
-                .FirstOrDefault(sw => sw.Host == this.ShellyAddress &&
+                .FirstOrDefault(sw => sw.SwitchName == this.ShellyName &&
                                       sw.ShellyButtonId == this.ShellyButtonId &&
                                       sw.ShellyDeviceType == this.ShellyDeviceType
                                       );
@@ -87,12 +89,17 @@ namespace SysTrayShellySwitch
             set { SetProperty(ref selectedSwitch, value); }
         }
 
-        public string ShellyAddress => this.Configuration.ShellyAddress;
+        public async Task<string> GetShellyIPAddress()
+        {
+            return await this.shellyManager.ResolveShellyIPAddress(this.ShellyName);
+        }
+
+        public string ShellyName => this.Configuration.ShellyName;
         public int ShellyButtonId => this.Configuration.ShellyButtonId;
         public HAPType ShellyDeviceType => this.Configuration.ShellyDeviceType;
 
 
-        private void SetConfiguration(string iPAddress, short shellyButtonId, HAPType shellyDeviceType)
+        private void SetConfiguration(string shellyName, short shellyButtonId, HAPType shellyDeviceType)
         {
             string appSettingFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SysTrayShellySwitch", "appSettings.json");
 
@@ -103,7 +110,7 @@ namespace SysTrayShellySwitch
                 settings = new JObject();
 
             var configuration = new ConfigSettings {
-                ShellyAddress = iPAddress,
+                ShellyName = shellyName,
                 ShellyButtonId = shellyButtonId,
                 ShellyDeviceType = shellyDeviceType
             };

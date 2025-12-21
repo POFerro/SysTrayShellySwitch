@@ -22,6 +22,7 @@ namespace SysTrayShellySwitch
         }
         private ShellySwitch shellySwitch;
 
+        private string shellyIPAddress;
 
         private SettingsViewModel settings;
         public ShellySwitchViewModel(SettingsViewModel settings)
@@ -31,32 +32,42 @@ namespace SysTrayShellySwitch
 
             this.settings.ConfigurationChanged += ConfigurationChanged_Handler;
 
-            this.RefreshDevice();
+            var t = this.Initialize();
+        }
+
+        private async Task Initialize()
+        {
+
+            this.shellyIPAddress = await this.settings.GetShellyIPAddress();
+            await this.RefreshDevice();
         }
 
         private void ConfigurationChanged_Handler(object sender, EventArgs e)
         {
-            this.RefreshDevice();
+            var t = this.RefreshDevice();
         }
 
-        private Task RefreshDevice()
+        private async Task RefreshDevice()
         {
-            this.ShellyDevice.IPAddress = settings.ShellyAddress;
+            this.ShellyDevice.IPAddress = this.shellyIPAddress;
 
-            return this.ShellyDevice.RefreshInfo().ContinueWith((task) => {
-                this.ShellySwitch = this.ShellyDevice.Components
-                                        .Where(c => c.Id == settings.ShellyButtonId && c.HAPType == settings.ShellyDeviceType)
-                                        .OfType<ShellySwitch>()
-                                        .FirstOrDefault()
-                                        ;
-                if (this.ShellySwitch == null)
-                {
-                    Trace.TraceWarning("Device was not found, retrying in 1 sec");
-                    Task.Delay(1000).ContinueWith(task => RefreshDevice());
-                }
-                else
-                    this.ShellySwitch.StateStringFormatter = (state) => $"As luzes estão {(state ? "ligadas" : "desligadas")}";
-            });
+            await this.ShellyDevice.RefreshInfo();
+
+            this.ShellySwitch = this.ShellyDevice.Components
+                                    .Where(c => c.Id == settings.ShellyButtonId && c.HAPType == settings.ShellyDeviceType)
+                                    .OfType<ShellySwitch>()
+                                    .FirstOrDefault()
+                                    ;
+            if (this.ShellySwitch == null)
+            {
+                Trace.TraceWarning("Device was not found, retrying in 1 sec");
+                
+                await Task.Delay(1000);
+
+                await RefreshDevice();
+            }
+            else
+                this.ShellySwitch.StateStringFormatter = (state) => $"As luzes estão {(state ? "ligadas" : "desligadas")}";
         }
 
         public Task RefreshShellyState()

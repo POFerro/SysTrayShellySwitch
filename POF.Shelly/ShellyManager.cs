@@ -151,9 +151,39 @@ namespace POF.Shelly
             }
         }
 
+        public async Task<string> ResolveShellyIPAddress(string shellyName)
+        {
+            var shellies = await this.FindShellies();
+
+            return shellies.Where(s => s.Name == shellyName).Select(s => s.IPAddress).FirstOrDefault();
+        }
+
         protected async Task RefreshShellies()
         {
             Trace.WriteLine("Refreshing found shellies with mDNS");
+
+            //ILookup<string, string> domains = await ZeroconfResolver.BrowseDomainsAsync();
+            //Trace.WriteLine($"Found domains: \r\n{string.Join("\r\n", domains.Select(d => d.Key + "->" + string.Join(";", d)))}");
+
+            //var responses = await ZeroconfResolver.ResolveAsync(domains.Select(g => g.Key));
+            //foreach (var resp in responses)
+            //    Console.WriteLine(resp);
+
+            var responses = await ZeroconfResolver.ResolveAsync("_hap._tcp.local.");
+            Trace.WriteLine($"Found {responses.Count} devices for _hap.tcp.local.");
+
+            var shelies = await this.FindShellies();
+
+            var newShelies = shelies
+                    .Where(newShelly => !this.FoundShellies.Any(existing => existing.IPAddress == newShelly.IPAddress))
+                    ;
+
+            this.FoundShellies = this.FoundShellies.Concat(newShelies).ToList();
+        }
+
+        protected async Task<IList<ShellyInfo>> FindShellies()
+        {
+            Trace.WriteLine("Finding shellies with mDNS");
 
             //ILookup<string, string> domains = await ZeroconfResolver.BrowseDomainsAsync();
             //Trace.WriteLine($"Found domains: \r\n{string.Join("\r\n", domains.Select(d => d.Key + "->" + string.Join(";", d)))}");
@@ -171,20 +201,15 @@ namespace POF.Shelly
                                                 mdValue.StartsWith("shelly", StringComparison.OrdinalIgnoreCase)
                                        ) == true
                        )
+                .Select(shelly => new ShellyInfo
+                {
+                    IPAddress = shelly.IPAddress,
+                    Name = shelly.DisplayName
+                })
                 .ToList();
             Trace.WriteLine($"Found {shelies.Count} shelly devices");
 
-            var newShelies = shelies
-                    .Select(c => new { c.IPAddress, c.DisplayName })
-                    .Where(newShelly => !this.FoundShellies.Any(existing => existing.IPAddress == newShelly.IPAddress))
-                    .Select(shelly => new ShellyInfo
-                    {
-                        IPAddress = shelly.IPAddress,
-                        Name = shelly.DisplayName
-                    });
-
-            if (newShelies.Any())
-                this.FoundShellies = this.FoundShellies.Concat(newShelies).ToList();
+            return shelies;
         }
 
         public void Dispose()
