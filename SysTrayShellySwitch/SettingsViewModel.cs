@@ -126,7 +126,7 @@ namespace SysTrayShellySwitch
 
         public void SaveChanges()
         {
-            SetConfiguration(SelectedSwitch.Host, SelectedSwitch.ShellyButtonId, SelectedSwitch.ShellyDeviceType);
+            SetConfiguration(SelectedSwitch.BridgeName, SelectedSwitch.ShellyButtonId, SelectedSwitch.ShellyDeviceType);
 
             this.ConfigurationChanged?.Invoke(this, EventArgs.Empty);
         }
